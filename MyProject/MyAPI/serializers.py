@@ -7,6 +7,7 @@ class UsersSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class PostsSerializer(serializers.ModelSerializer):
+    
     class Meta:
         model = Posts
         fields = '__all__'
@@ -15,6 +16,21 @@ class CommentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comments
         fields = '__all__'
+    
+    def create(self, validated_data):
+        # Create the comment
+        comment = Comments.objects.create(**validated_data)
+        
+        # Create notification if receiver is different from sender
+        if comment.receiver_id != comment.sender_id:
+            Notifications.objects.create(
+                user_id=comment.receiver_id,
+                post_id=comment.post_id,
+                message=f"{comment.sender_id.username} đã nhắc tới bạn",
+                created_at=comment.created_at
+            )
+        
+        return comment
     
 class NotificationsSerializer(serializers.ModelSerializer):
     class Meta:

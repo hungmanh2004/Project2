@@ -19,3 +19,19 @@ class PostView(generics.ListCreateAPIView):
 class SinglePostView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
+    
+class CommentView(generics.ListCreateAPIView):
+    queryset = Comments.objects.all()
+    serializer_class = CommentsSerializer
+    
+class CommentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Comments.objects.all()
+    serializer_class = CommentsSerializer
+    
+class NotificationView(generics.ListAPIView):
+    queryset = Notifications.objects.all()
+    serializer_class = NotificationsSerializer
+    
+class NotificationDetailView(generics.RetrieveDestroyAPIView):
+    queryset = Notifications.objects.all()
+    serializer_class = NotificationsSerializer

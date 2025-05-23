@@ -8,9 +8,6 @@ class Users(models.Model):
     phone = models.CharField(max_length=20, blank=False)
     password = models.CharField(max_length=255, blank=False)
     role = models.BooleanField(default=False)
-
-    def __str__(self):
-        return self.email
     
     class Meta:
         verbose_name = "User"
@@ -22,7 +19,7 @@ class Users(models.Model):
     
 class Posts(models.Model):
     post_id = models.AutoField(primary_key=True)
-    email = models.ForeignKey(Users, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(Users, on_delete=models.CASCADE)
     species = models.CharField(max_length=255)
     breed = models.CharField(max_length=255)
     status = models.BooleanField(default=False)
@@ -31,9 +28,6 @@ class Posts(models.Model):
     longitude = models.FloatField()
     image = models.ImageField(upload_to='images/', blank=True, null=True)
     post_time = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.email} {self.post_time}"
     
     class Meta:
         verbose_name = "Post"
@@ -50,9 +44,6 @@ class Comments(models.Model):
     receiver_id = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='receiver')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.sender_id} {self.receiver_id} {self.post_id} {self.created_at}"
     
     class Meta:
         verbose_name = "Comment"
@@ -69,9 +60,6 @@ class Notifications(models.Model):
     message = models.TextField()
     read_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
-
-    def __str__(self):
-        return f"{self.user_id} {self.post_id} {self.created_at}"
     
     class Meta:
         verbose_name = "Notification"
