@@ -16,6 +16,7 @@ class CommentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comments
         fields = '__all__'
+        read_only_fields = ('post_id',)  # Make post_id read-only
     
     def create(self, validated_data):
         # Create the comment
