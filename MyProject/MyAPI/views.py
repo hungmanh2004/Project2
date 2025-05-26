@@ -1,13 +1,20 @@
 from django.shortcuts import render
 from rest_framework import generics, status
+from rest_framework.decorators import api_view # import sẵn thôi chứ chưa cần lắm
 from rest_framework.response import Response
 from .models import Users, Posts, Comments, Notifications
 from .serializers import UsersSerializer, PostsSerializer, CommentsSerializer, NotificationsSerializer
+from rest_framework.permissions import IsAuthenticated # import sẵn thôi chứ chưa cần lắm
+from rest_framework.decorators import permission_classes # import sẵn thôi chứ chưa cần lắm
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 # Create your views here.
 class UserView(generics.ListCreateAPIView):
     queryset = Users.objects.all()
     serializer_class = UsersSerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['username']
+    ordering_fields = ['user_id','username']
     
 class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Users.objects.all()
@@ -16,6 +23,9 @@ class UserDetailView(generics.RetrieveUpdateDestroyAPIView):
 class PostView(generics.ListCreateAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
+    filter_backends = [SearchFilter, OrderingFilter]
+    search_fields = ['description']
+    ordering_fields = ['post_time']
     
 class SinglePostView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Posts.objects.all()
