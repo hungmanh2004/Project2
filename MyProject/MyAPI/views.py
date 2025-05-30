@@ -7,6 +7,8 @@ from .serializers import UsersSerializer, PostsSerializer, CommentsSerializer, N
 from rest_framework.permissions import IsAuthenticated # import sẵn thôi chứ chưa cần lắm
 from rest_framework.decorators import permission_classes # import sẵn thôi chứ chưa cần lắm
 from rest_framework.filters import SearchFilter, OrderingFilter
+from rest_framework.views import APIView
+from rest_framework import status
 
 # Create your views here.
 class UserView(generics.ListCreateAPIView):
@@ -85,3 +87,51 @@ class NotificationsOfUserView(generics.ListAPIView):
 class NotificationDetailView(generics.RetrieveDestroyAPIView):
     queryset = Notifications.objects.all()
     serializer_class = NotificationsSerializer
+    
+class NearbyPostsView(APIView):
+    def get(self, request, *args, **kwargs):
+        try:
+            # Lấy tham số từ URL
+            lat = float(request.query_params.get('latitude'))
+            lon = float(request.query_params.get('longitude'))
+            max_distance = float(request.query_params.get('distance', 2.0))  # Mặc định 2km
+            
+            # Lấy tất cả bài đăng
+            all_posts = Posts.objects.all()
+            
+            # Lọc các bài đăng trong bán kính
+            nearby_posts = []
+            for post in all_posts:
+                distance = post.distance_to(lat, lon)
+                if distance <= max_distance:
+                    post.distance = distance  # Thêm khoảng cách vào đối tượng bài đăng
+                    nearby_posts.append(post)
+            
+            # Sắp xếp theo khoảng cách gần nhất
+            nearby_posts_sorted = sorted(nearby_posts, key=lambda x: x.distance)
+            
+            # Serialize dữ liệu
+            serializer = PostsSerializer(nearby_posts_sorted, many=True)
+            
+            # Thêm thông tin khoảng cách vào kết quả
+            result_data = []
+            for i, post in enumerate(nearby_posts_sorted):
+                post_data = serializer.data[i]
+                post_data['distance_km'] = round(post.distance, 2)  # Làm tròn đến 2 chữ số
+                result_data.append(post_data)
+            
+            return Response({
+                'count': len(result_data),
+                'results': result_data
+            })
+            
+        except (TypeError, ValueError):
+            return Response(
+                {'error': 'Invalid latitude or longitude values'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            return Response(
+                {'error': str(e)},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )

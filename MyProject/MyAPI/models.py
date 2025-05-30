@@ -1,4 +1,5 @@
 from django.db import models
+from math import radians, sin, cos, sqrt, atan2
 
 # Create your models here.
 class Users(models.Model):
@@ -8,6 +9,9 @@ class Users(models.Model):
     phone = models.CharField(max_length=20, blank=False)
     password = models.CharField(max_length=255, blank=False)
     role = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return self.username + " - " + self.email
     
     class Meta:
         verbose_name = "User"
@@ -29,6 +33,30 @@ class Posts(models.Model):
     image = models.ImageField(upload_to='images/', blank=True, null=True)
     post_time = models.DateTimeField(auto_now_add=True)
     
+    def __str__(self):
+        return self.user_id.username + " - " + self.post_time.strftime("%d/%m/%Y %H:%M:%S") + " - " + self.description
+    
+    def distance_to(self, lat, lon):
+        # Bán kính trái đất tính bằng km
+        R = 6371.0
+        
+        # Chuyển đổi độ sang radian
+        lat1 = radians(self.latitude)
+        lon1 = radians(self.longitude)
+        lat2 = radians(lat)
+        lon2 = radians(lon)
+        
+        # Tính toán chênh lệch
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        
+        # Công thức Haversine
+        a = sin(dlat / 2)**2 + cos(lat1) * cos(lat2) * sin(dlon / 2)**2
+        c = 2 * atan2(sqrt(a), sqrt(1 - a))
+        distance = R * c
+        
+        return distance
+    
     class Meta:
         verbose_name = "Post"
         verbose_name_plural = "Posts"
@@ -45,6 +73,9 @@ class Comments(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     
+    def __str__(self):
+        return self.sender_id.username + " - " + self.created_at.strftime("%d/%m/%Y %H:%M:%S") + " - " + self.content
+    
     class Meta:
         verbose_name = "Comment"
         verbose_name_plural = "Comments"
@@ -60,6 +91,9 @@ class Notifications(models.Model):
     message = models.TextField()
     read_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.user_id.username + " - " + self.created_at.strftime("%d/%m/%Y %H:%M:%S")
     
     class Meta:
         verbose_name = "Notification"
