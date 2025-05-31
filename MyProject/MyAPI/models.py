@@ -10,6 +10,9 @@ class Users(models.Model):
     password = models.CharField(max_length=255, blank=False)
     role = models.BooleanField(default=False)
     
+    def __str__(self):
+        return "(" + str(self.user_id) + ")" + self.username
+    
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"
@@ -30,6 +33,9 @@ class Posts(models.Model):
     image = models.ImageField(upload_to='images/', blank=True, null=True)
     post_time = models.DateTimeField(auto_now_add=True)
     like_count = models.PositiveIntegerField(default=0)
+    
+    def __str__(self):
+        return "(" + str(self.post_id) + ")" + self.description
     
     def distance_to(self, lat, lon):
         # Bán kính trái đất tính bằng km
