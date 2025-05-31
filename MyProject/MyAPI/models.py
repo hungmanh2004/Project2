@@ -10,9 +10,6 @@ class Users(models.Model):
     password = models.CharField(max_length=255, blank=False)
     role = models.BooleanField(default=False)
     
-    def __str__(self):
-        return self.username + " - " + self.email
-    
     class Meta:
         verbose_name = "User"
         verbose_name_plural = "Users"
@@ -32,9 +29,7 @@ class Posts(models.Model):
     longitude = models.FloatField()
     image = models.ImageField(upload_to='images/', blank=True, null=True)
     post_time = models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return self.user_id.username + " - " + self.post_time.strftime("%d/%m/%Y %H:%M:%S") + " - " + self.description
+    like_count = models.PositiveIntegerField(default=0)
     
     def distance_to(self, lat, lon):
         # Bán kính trái đất tính bằng km
@@ -73,9 +68,6 @@ class Comments(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     
-    def __str__(self):
-        return self.sender_id.username + " - " + self.created_at.strftime("%d/%m/%Y %H:%M:%S") + " - " + self.content
-    
     class Meta:
         verbose_name = "Comment"
         verbose_name_plural = "Comments"
@@ -92,13 +84,27 @@ class Notifications(models.Model):
     read_status = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
-    def __str__(self):
-        return self.user_id.username + " - " + self.created_at.strftime("%d/%m/%Y %H:%M:%S")
-    
     class Meta:
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
         ordering = ['created_at']
-        indexes = [
-            models.Index(fields=['noti_id']),
-        ]
+
+class PostLike(models.Model):
+    post = models.ForeignKey(Posts, on_delete=models.CASCADE, related_name='likes')
+    user = models.ForeignKey(Users, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+        verbose_name = "Post Like"
+        verbose_name_plural = "Post Likes"
+        
+class PostSave(models.Model):
+    post = models.ForeignKey(Posts, on_delete=models.CASCADE, related_name='saves')
+    user = models.ForeignKey(Users, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('post', 'user')
+        verbose_name = "Post Save"
+        verbose_name_plural = "Post Saves"

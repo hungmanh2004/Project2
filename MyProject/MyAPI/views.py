@@ -2,13 +2,16 @@ from django.shortcuts import render
 from rest_framework import generics, status
 from rest_framework.decorators import api_view # import sẵn thôi chứ chưa cần lắm
 from rest_framework.response import Response
-from .models import Users, Posts, Comments, Notifications
-from .serializers import UsersSerializer, PostsSerializer, CommentsSerializer, NotificationsSerializer
+from .models import Users, Posts, Comments, Notifications, PostLike, PostSave
+from .serializers import UsersSerializer, PostsSerializer, CommentsSerializer, NotificationsSerializer, PostLikeSerializer, PostSaveSerializer
 from rest_framework.permissions import IsAuthenticated # import sẵn thôi chứ chưa cần lắm
 from rest_framework.decorators import permission_classes # import sẵn thôi chứ chưa cần lắm
 from rest_framework.filters import SearchFilter, OrderingFilter
 from rest_framework.views import APIView
 from rest_framework import status
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+import json
 
 # Create your views here.
 class UserView(generics.ListCreateAPIView):
@@ -29,10 +32,62 @@ class PostView(generics.ListCreateAPIView):
     search_fields = ['description']
     ordering_fields = ['post_time']
     
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+    
 class SinglePostView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Posts.objects.all()
     serializer_class = PostsSerializer
     
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
+class PostLikeView(generics.CreateAPIView):
+    serializer_class = PostLikeSerializer
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['post_id'] = self.kwargs.get('pk')
+        return context
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        
+        status_code = status.HTTP_201_CREATED if result['liked'] else status.HTTP_200_OK
+        return Response(result, status=status_code)
+    
+class PostSaveView(generics.CreateAPIView):
+    serializer_class = PostSaveSerializer
+    
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['post_id'] = self.kwargs.get('pk')
+        return context
+    
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        result = serializer.save()
+        
+        status_code = status.HTTP_201_CREATED if result['saved'] else status.HTTP_200_OK
+        return Response(result, status=status_code)
+
+
+class SavedPostsView(generics.ListAPIView):
+    serializer_class = PostsSerializer
+    
+    def get_queryset(self):
+        user_id = self.kwargs.get('pk')
+        saved_posts = PostSave.objects.filter(user_id=user_id).values_list('post_id', flat=True)
+        return Posts.objects.filter(post_id__in=saved_posts)
+
+
 class CommentsOfPostView(generics.ListCreateAPIView):
     serializer_class = CommentsSerializer
     
