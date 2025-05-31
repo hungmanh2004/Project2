@@ -98,7 +98,6 @@ class Notifications(models.Model):
 class PostLike(models.Model):
     post = models.ForeignKey(Posts, on_delete=models.CASCADE, related_name='likes')
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('post', 'user')
@@ -108,7 +107,6 @@ class PostLike(models.Model):
 class PostSave(models.Model):
     post = models.ForeignKey(Posts, on_delete=models.CASCADE, related_name='saves')
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = ('post', 'user')
