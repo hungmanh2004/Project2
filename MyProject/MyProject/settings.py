@@ -42,7 +42,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'MyAPI',
     'corsheaders',
-    'django_filters', # chưa cần lắm vì dùng cách dễ hơn rồi
+    'django_filters',
+    'channels',
 ]
 
 MIDDLEWARE = [
@@ -73,7 +74,18 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'MyProject.wsgi.application'
+# WSGI_APPLICATION = 'MyProject.wsgi.application' #ko dùng wsgi nữa
+ASGI_APPLICATION = 'MyProject.asgi.application'
+
+# Cấu hình Redis cho Channels
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
 
 
 # Database

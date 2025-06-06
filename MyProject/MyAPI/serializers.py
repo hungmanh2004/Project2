@@ -1,5 +1,7 @@
 from .models import Users, Posts, Comments, Notifications, PostLike, PostSave
 from rest_framework import serializers
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 class UsersSerializer(serializers.ModelSerializer):
     class Meta:
@@ -7,12 +9,11 @@ class UsersSerializer(serializers.ModelSerializer):
         fields = '__all__'
         
 class PostsSerializer(serializers.ModelSerializer):
-    like_count = serializers.IntegerField(read_only=True)
+    like_count = serializers.IntegerField()
     
     class Meta:
         model = Posts
         fields = '__all__'
-        read_only_fields = ('like_count',)
     
 class CommentsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,18 +22,37 @@ class CommentsSerializer(serializers.ModelSerializer):
         read_only_fields = ('post_id',)  # Make post_id read-only
     
     def create(self, validated_data):
-        # Create the comment
         comment = Comments.objects.create(**validated_data)
         
-        # Create notification if receiver is different from sender
         if comment.receiver_id != comment.sender_id:
-            Notifications.objects.create(
+            # Tạo notification
+            noti = Notifications.objects.create(
                 user_id=comment.receiver_id,
                 post_id=comment.post_id,
                 message=f"{comment.sender_id.username} đã nhắc tới bạn",
                 created_at=comment.created_at
             )
-        
+
+            # Gửi notification qua WebSocket
+            channel_layer = get_channel_layer()
+            unread_count = Notifications.objects.filter(
+                user_id=comment.receiver_id, read_status=False
+            ).count()
+
+            async_to_sync(channel_layer.group_send)(
+                f"user_{comment.receiver_id.user_id}",  # chú ý: dùng .user_id vì là instance User
+                {
+                    "type": "send_notification",
+                    "data": {
+                        "noti_id": noti.noti_id,
+                        "post_id": noti.post_id.post_id,
+                        "message": noti.message,
+                        "created_at": noti.created_at.isoformat(),
+                        "read_status": noti.read_status,
+                        "unread_count": unread_count
+                    }
+                }
+            )
         return comment
     
 class PostLikeSerializer(serializers.Serializer):
