@@ -32,7 +32,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
             }))
 
     async def send_notification(self, event):
-        await self.send(text_data=json.dumps(event["data"]))
+        await self.send(text_data=json.dumps(event["data"], ensure_ascii=False))
 
     @database_sync_to_async
     def mark_as_read(self, noti_id):

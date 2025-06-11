@@ -166,6 +166,26 @@ class NotificationsOfUserView(generics.ListAPIView):
 class NotificationDetailView(generics.RetrieveDestroyAPIView):
     queryset = Notifications.objects.all()
     serializer_class = NotificationsSerializer
+
+    def update(self, request, *args, **kwargs):
+        # Nếu là PATCH request, chỉ lấy trường read_status từ request data
+        if request.method == 'PATCH':
+            # Tạo một bản sao của request.data
+            data = request.data.copy()
+            # Chỉ giữ lại trường read_status nếu có
+            if 'read_status' in data:
+                data = {'read_status': data['read_status']}
+            else:
+                return Response(
+                    {'error': 'No read_status provided'}, 
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            # Gọi phương thức update của lớp cha với dữ liệu đã lọc
+            return super().update(request, *args, **kwargs)
+        
+        # Nếu không phải PATCH, xử lý như bình thường
+        return super().update(request, *args, **kwargs)
     
 class NearbyPostsView(APIView):
     def get(self, request, *args, **kwargs):

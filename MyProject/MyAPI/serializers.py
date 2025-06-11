@@ -151,15 +151,32 @@ class NotificationsSerializer(serializers.ModelSerializer):
         model = Notifications
         fields = '__all__'
         
-    def save(self, *args, **kwargs):
-        # Update like count when saving
-        if not self.pk:  # Only on create
-            self.post.like_count += 1
-            self.post.save()
-        super().save(*args, **kwargs)
+    def save(self, **kwargs):
+        # Kiểm tra xem đây có phải là tạo mới hay không
+        if self.instance is None:  # Nếu là tạo mới
+            # Gọi save bình thường
+            instance = super().save(**kwargs)
+            # Nếu có post_id và muốn tăng like_count
+            if hasattr(instance, 'post_id') and instance.post_id:
+                try:
+                    post = instance.post_id
+                    if hasattr(post, 'like_count'): 
+                        post.like_count += 1
+                        post.save(update_fields=['like_count'])
+                except Exception:
+                    pass
+            return instance
+        # Nếu là cập nhật, gọi save bình thường
+        return super().save(**kwargs)
         
-    def delete(self, *args, **kwargs):
-        # Update like count when deleting
-        self.post.like_count -= 1
-        self.post.save()
-        super().delete(*args, **kwargs)
+    def delete(self, instance):
+        # Xử lý khi xóa notification
+        if hasattr(instance, 'post_id') and instance.post_id:
+            try:
+                post = instance.post_id
+                if hasattr(post, 'like_count'):
+                    post.like_count = max(0, post.like_count - 1)
+                    post.save(update_fields=['like_count'])
+            except Exception:
+                pass
+        instance.delete()
